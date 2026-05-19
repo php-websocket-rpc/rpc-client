@@ -1,0 +1,26 @@
+{
+    "name": "php-websocket-rpc/rpc-client",
+    "description": "Async RPC client over WebSocket using amphp and msgpack",
+    "type": "library",
+    "require": {
+        "php": ">=8.5",
+        "ext-msgpack": "*",
+        "amphp/amp": "^3",
+        "amphp/websocket-client": "^2",
+        "friendsofphp/proxy-manager-lts": "^1.0",
+        "php-websocket-rpc/rpc": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11"
+    },
+    "autoload": {
+        "psr-4": {
+            "PhpWebsocketRpc\\RpcClient\\": ""
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PhpWebsocketRpc\\RpcClient\\Tests\\": "Tests/"
+        }
+    }
+}
