@@ -16,7 +16,7 @@ use PhpWebsocketRpc\Rpc\Payload\Payload;
 use PhpWebsocketRpc\Rpc\Payload\RpcResponse;
 use PhpWebsocketRpc\Rpc\Payload\StreamClose;
 use PhpWebsocketRpc\Rpc\Stream\StreamSubscribable;
-use PhpWebsocketRpc\RpcClient\Client\ContractProxyFactory;
+
 use PhpWebsocketRpc\RpcClient\Middleware\ClientMiddlewareInterface;
 use PhpWebsocketRpc\RpcClient\Stream\Subscription;
 use PhpWebsocketRpc\RpcClient\Transport\FramedConnection;
@@ -138,7 +138,7 @@ final class RpcClient
 
     public function use(ClientMiddlewareInterface $middleware): void
     {
-        $this->middlewarePipeline->use(function (Payload $payload, callable $next) use ($middleware): \Amp\Future {
+        $this->middlewarePipeline->use(static function (Payload $payload, callable $next) use ($middleware): \Amp\Future {
             return $middleware->handle($payload, $next);
         });
     }
@@ -239,8 +239,8 @@ final class RpcClient
 
     private function reconstructException(?Error $error): \Throwable
     {
-        $message = $error?->message ?? 'Unknown RPC error';
-        $code = $error?->code ?? Error::INTERNAL_ERROR;
+        $message = $error->message ?? 'Unknown RPC error';
+        $code = $error->code ?? Error::INTERNAL_ERROR;
         $data = $error?->data;
         $class = $error?->exceptionClass;
 

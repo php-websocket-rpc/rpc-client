@@ -98,7 +98,7 @@ final class ContractProxyFactory
 
         // ─── 1. Publish pattern ───────────────────────────────
 
-        if (!empty($publishAttr)) {
+        if ($publishAttr !== []) {
             $channel = $publishAttr[0]->newInstance()->channel;
 
             return function (object $proxy, object $instance, string $methodName, array $args, bool &$returnEarly) use (
@@ -121,8 +121,8 @@ final class ContractProxyFactory
 
         $hasCallableParam = $this->hasCallableParameter($params);
 
-        if (!empty($subscribeAttr) || $hasCallableParam && $returnTypeName === 'void') {
-            $attr = !empty($subscribeAttr) ? $subscribeAttr[0]->newInstance() : null;
+        if ($subscribeAttr !== [] || $hasCallableParam && $returnTypeName === 'void') {
+            $attr = $subscribeAttr !== [] ? $subscribeAttr[0]->newInstance() : null;
             $channel = $attr?->channel ?: '';
             $callableArgType = $attr?->type;
 
@@ -150,17 +150,17 @@ final class ContractProxyFactory
                 $subscription = $this->rpcClient->subscribe($invocation);
                 $returnEarly = true;
 
-                \Amp\async(function () use ($subscription, $userCallback, $callableArgType): void {
+                \Amp\async(static function () use ($subscription, $userCallback, $callableArgType): void {
                     foreach ($subscription as $streamValue) {
-                        if ($streamValue instanceof ContractStreamValue) {
-                            $decoded = $streamValue->value;
+                        if (!($streamValue instanceof ContractStreamValue)) { continue; }
+
+$decoded = $streamValue->value;
 
                             if ($callableArgType !== null && \is_array($decoded)) {
                                 $decoded = ContractSerializer::decode($decoded, $callableArgType);
                             }
 
                             $userCallback($decoded);
-                        }
                     }
                 });
             };
@@ -179,8 +179,8 @@ final class ContractProxyFactory
             true,
         );
 
-        if (!empty($streamAttr) || $isIteratorReturn) {
-            $attr = !empty($streamAttr) ? $streamAttr[0]->newInstance() : null;
+        if ($streamAttr !== [] || $isIteratorReturn) {
+            $attr = $streamAttr !== [] ? $streamAttr[0]->newInstance() : null;
             $innerType = $attr?->type;
 
             return function (object $proxy, object $instance, string $methodName, array $args, bool &$returnEarly) use (
@@ -192,17 +192,17 @@ final class ContractProxyFactory
                 $subscription = $this->rpcClient->subscribe($invocation);
                 $returnEarly = true;
 
-                return (function () use ($subscription, $innerType): \Generator {
+                return (static function () use ($subscription, $innerType): \Generator {
                     foreach ($subscription as $streamValue) {
-                        if ($streamValue instanceof ContractStreamValue) {
-                            $decoded = $streamValue->value;
+                        if (!($streamValue instanceof ContractStreamValue)) { continue; }
+
+$decoded = $streamValue->value;
 
                             if ($innerType !== null && \is_array($decoded)) {
                                 $decoded = ContractSerializer::decode($decoded, $innerType);
                             }
 
                             yield $decoded;
-                        }
                     }
                 })();
             };

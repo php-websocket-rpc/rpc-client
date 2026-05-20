@@ -25,7 +25,7 @@ final class SubscriptionManager
 
     public function remove(string $channel): void
     {
-        if (isset($this->subscriptions[$channel])) {
+        if (\array_key_exists($channel, $this->subscriptions)) {
             $this->subscriptions[$channel]->complete();
             unset($this->subscriptions[$channel]);
         }
@@ -59,7 +59,7 @@ final class SubscriptionManager
 
     public function has(string $channel): bool
     {
-        return isset($this->subscriptions[$channel]);
+        return \array_key_exists($channel, $this->subscriptions);
     }
 
     public function count(): int

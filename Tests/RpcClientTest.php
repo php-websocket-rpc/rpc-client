@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace PhpWebsocketRpc\RpcClient\Tests;
 
 use PHPUnit\Framework\TestCase;
-use PhpWebsocketRpc\Rpc\Payload\Kind;
-use PhpWebsocketRpc\Rpc\Payload\Payload;
+
+
 use PhpWebsocketRpc\RpcClient\Client\ClientException;
 
 class RpcClientTest extends TestCase
 {
     public function testClientExceptionConstruction(): void
     {
-        $e = new ClientException('test error', -32000, ['key' => 'val']);
+        $e = new ClientException('test error', -32_000, ['key' => 'val']);
         $this->assertSame('test error', $e->getMessage());
-        $this->assertSame(-32000, $e->getRpcCode());
+        $this->assertSame(-32_000, $e->getRpcCode());
         $this->assertSame(['key' => 'val'], $e->getErrorData());
     }
 
