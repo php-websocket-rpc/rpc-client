@@ -19,7 +19,7 @@ use PhpWebsocketRpc\Rpc\Stream\StreamSubscribable;
 
 use PhpWebsocketRpc\RpcClient\Middleware\ClientMiddlewareInterface;
 use PhpWebsocketRpc\RpcClient\Stream\Subscription;
-use PhpWebsocketRpc\RpcClient\Transport\FramedConnection;
+use PhpWebsocketRpc\Rpc\Transport\FramedConnection;
 
 use function Amp\Websocket\Client\connect as wsConnect;
 
