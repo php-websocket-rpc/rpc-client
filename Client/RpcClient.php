@@ -7,7 +7,8 @@ namespace PhpWebsocketRpc\RpcClient\Client;
 use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\TimeoutCancellation;
-use PhpWebsocketRpc\RpcClient\Middleware\ClientMiddlewareInterface;
+use Amp\Websocket\Client\WebsocketConnector;
+use Amp\Websocket\Client\WebsocketHandshake;
 use PhpWebsocketRpc\Rpc\Middleware\MiddlewarePipeline;
 use PhpWebsocketRpc\Rpc\Payload\Error;
 use PhpWebsocketRpc\Rpc\Payload\Kind;
@@ -15,11 +16,11 @@ use PhpWebsocketRpc\Rpc\Payload\Payload;
 use PhpWebsocketRpc\Rpc\Payload\RpcResponse;
 use PhpWebsocketRpc\Rpc\Payload\StreamClose;
 use PhpWebsocketRpc\Rpc\Stream\StreamSubscribable;
+use PhpWebsocketRpc\RpcClient\Client\ContractProxyFactory;
+use PhpWebsocketRpc\RpcClient\Middleware\ClientMiddlewareInterface;
 use PhpWebsocketRpc\RpcClient\Stream\Subscription;
 use PhpWebsocketRpc\RpcClient\Transport\FramedConnection;
-use Amp\Websocket\Client\WebsocketConnector;
-use Amp\Websocket\Client\WebsocketHandshake;
-use PhpWebsocketRpc\RpcClient\Client\ContractProxyFactory;
+
 use function Amp\Websocket\Client\connect as wsConnect;
 
 final class RpcClient
@@ -41,9 +42,7 @@ final class RpcClient
 
     public static function connect(string $uri, ?WebsocketConnector $connector = null): self
     {
-        $ws = $connector
-            ? $connector->connect(new WebsocketHandshake($uri))
-            : wsConnect($uri);
+        $ws = $connector ? $connector->connect(new WebsocketHandshake($uri)) : wsConnect($uri);
         $connection = new FramedConnection($ws);
 
         $client = new self($connection);
@@ -62,7 +61,7 @@ final class RpcClient
     public function call(Kind\RpcRequest&Payload $payload, ?float $timeout = null): Future
     {
         if ($this->closed) {
-           throw new ClientException('Client is closed');
+            throw new ClientException('Client is closed');
         }
 
         $responseClass = $payload::responseClass();
@@ -85,10 +84,7 @@ final class RpcClient
                 try {
                     return $future->await($cancellation);
                 } catch (\Amp\TimeoutException) {
-                    $this->pendingRequests->reject(
-                        $requestId,
-                        new \Amp\TimeoutException('Request timed out'),
-                    );
+                    $this->pendingRequests->reject($requestId, new \Amp\TimeoutException('Request timed out'));
 
                     throw new ClientException(
                         \sprintf('Request timed out after %.1f seconds', $timeout),
@@ -142,11 +138,9 @@ final class RpcClient
 
     public function use(ClientMiddlewareInterface $middleware): void
     {
-        $this->middlewarePipeline->use(
-            function (Payload $payload, callable $next) use ($middleware): \Amp\Future {
-                return $middleware->handle($payload, $next);
-            }
-        );
+        $this->middlewarePipeline->use(function (Payload $payload, callable $next) use ($middleware): \Amp\Future {
+            return $middleware->handle($payload, $next);
+        });
     }
 
     public function close(): void
@@ -157,9 +151,7 @@ final class RpcClient
 
         $this->closed = true;
 
-        $this->pendingRequests->rejectAll(
-            new ClientException('Connection closed by client'),
-        );
+        $this->pendingRequests->rejectAll(new ClientException('Connection closed by client'));
 
         $this->subscriptions->closeAll();
 
@@ -227,7 +219,7 @@ final class RpcClient
 
     private function handleRpcResponse(Payload $payload): void
     {
-        if (!($payload instanceof RpcResponse)) {
+        if (!$payload instanceof RpcResponse) {
             return;
         }
 
@@ -236,10 +228,7 @@ final class RpcClient
             if ($result !== null) {
                 $this->pendingRequests->resolve($payload->id, $result);
             } else {
-                $this->pendingRequests->reject(
-                    $payload->id,
-                    new \RuntimeException('Empty success response payload'),
-                );
+                $this->pendingRequests->reject($payload->id, new \RuntimeException('Empty success response payload'));
             }
         } else {
             $error = $payload->getError();
@@ -251,15 +240,14 @@ final class RpcClient
     private function reconstructException(?Error $error): \Throwable
     {
         $message = $error?->message ?? 'Unknown RPC error';
-        $code    = $error?->code ?? Error::INTERNAL_ERROR;
-        $data    = $error?->data;
-        $class   = $error?->exceptionClass;
+        $code = $error?->code ?? Error::INTERNAL_ERROR;
+        $data = $error?->data;
+        $class = $error?->exceptionClass;
 
         if ($class !== null && \class_exists($class) && \is_subclass_of($class, \Throwable::class)) {
             try {
                 return new $class($message, $code, $data);
             } catch (\Throwable) {
-
             }
         }
 
@@ -280,13 +268,10 @@ final class RpcClient
             return;
         }
 
-        $this->middlewarePipeline->execute(
-            $payload,
-            function (Payload $payload): \Amp\Future {
-                $this->sendPayload($payload);
-                return new DeferredFuture()->getFuture();
-            },
-        );
+        $this->middlewarePipeline->execute($payload, function (Payload $payload): \Amp\Future {
+            $this->sendPayload($payload);
+            return new DeferredFuture()->getFuture();
+        });
     }
 
     private function sendPayload(Payload $payload): void

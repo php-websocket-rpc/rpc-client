@@ -101,13 +101,10 @@ final class ContractProxyFactory
         if (!empty($publishAttr)) {
             $channel = $publishAttr[0]->newInstance()->channel;
 
-            return function (
-                object $proxy,
-                object $instance,
-                string $methodName,
-                array $args,
-                bool &$returnEarly,
-            ) use ($interface, $channel): void {
+            return function (object $proxy, object $instance, string $methodName, array $args, bool &$returnEarly) use (
+                $interface,
+                $channel,
+            ): void {
                 $publish = new ContractPublish(
                     service: $interface,
                     method: $methodName,
@@ -124,18 +121,16 @@ final class ContractProxyFactory
 
         $hasCallableParam = $this->hasCallableParameter($params);
 
-        if (!empty($subscribeAttr) || ($hasCallableParam && $returnTypeName === 'void')) {
+        if (!empty($subscribeAttr) || $hasCallableParam && $returnTypeName === 'void') {
             $attr = !empty($subscribeAttr) ? $subscribeAttr[0]->newInstance() : null;
             $channel = $attr?->channel ?: '';
             $callableArgType = $attr?->type;
 
-            return function (
-                object $proxy,
-                object $instance,
-                string $methodName,
-                array $args,
-                bool &$returnEarly,
-            ) use ($interface, $channel, $callableArgType): void {
+            return function (object $proxy, object $instance, string $methodName, array $args, bool &$returnEarly) use (
+                $interface,
+                $channel,
+                $callableArgType,
+            ): void {
                 $userCallback = $args[\array_key_last($args)] ?? null;
 
                 if (!\is_callable($userCallback)) {
@@ -146,11 +141,7 @@ final class ContractProxyFactory
                     ));
                 }
 
-                $invocation = new ContractStreamInvocation(
-                    service: $interface,
-                    method: $methodName,
-                    params: [],
-                );
+                $invocation = new ContractStreamInvocation(service: $interface, method: $methodName, params: []);
 
                 if ($channel !== '') {
                     $invocation->setChannel($channel);
@@ -177,26 +168,26 @@ final class ContractProxyFactory
 
         // ─── 3. Stream pattern (attribute or Iterator return) ──
 
-        $isIteratorReturn = \in_array($returnTypeName, [
-            'Iterator', 'Generator', 'Traversable', 'iterable',
-        ], true);
+        $isIteratorReturn = \in_array(
+            $returnTypeName,
+            [
+                'Iterator',
+                'Generator',
+                'Traversable',
+                'iterable',
+            ],
+            true,
+        );
 
         if (!empty($streamAttr) || $isIteratorReturn) {
             $attr = !empty($streamAttr) ? $streamAttr[0]->newInstance() : null;
             $innerType = $attr?->type;
 
-            return function (
-                object $proxy,
-                object $instance,
-                string $methodName,
-                array $args,
-                bool &$returnEarly,
-            ) use ($interface, $innerType): \Generator {
-                $invocation = new ContractStreamInvocation(
-                    service: $interface,
-                    method: $methodName,
-                    params: $args,
-                );
+            return function (object $proxy, object $instance, string $methodName, array $args, bool &$returnEarly) use (
+                $interface,
+                $innerType,
+            ): \Generator {
+                $invocation = new ContractStreamInvocation(service: $interface, method: $methodName, params: $args);
 
                 $subscription = $this->rpcClient->subscribe($invocation);
                 $returnEarly = true;
@@ -220,13 +211,9 @@ final class ContractProxyFactory
         // ─── 4. Notification pattern ─────────────────────────
 
         if ($returnTypeName === 'void') {
-            return function (
-                object $proxy,
-                object $instance,
-                string $methodName,
-                array $args,
-                bool &$returnEarly,
-            ) use ($interface): void {
+            return function (object $proxy, object $instance, string $methodName, array $args, bool &$returnEarly) use (
+                $interface,
+            ): void {
                 $invocation = new ContractInvocation(
                     service: $interface,
                     method: $methodName,
@@ -240,13 +227,9 @@ final class ContractProxyFactory
 
         // ─── 5. Call/Response pattern ─────────────────────────
 
-        return function (
-            object $proxy,
-            object $instance,
-            string $methodName,
-            array $args,
-            bool &$returnEarly,
-        ) use ($interface): mixed {
+        return function (object $proxy, object $instance, string $methodName, array $args, bool &$returnEarly) use (
+            $interface,
+        ): mixed {
             $invocation = new ContractInvocation(
                 service: $interface,
                 method: $methodName,

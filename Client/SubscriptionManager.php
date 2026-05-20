@@ -33,7 +33,7 @@ final class SubscriptionManager
 
     public function feed(Payload $payload): void
     {
-        if (!($payload instanceof StreamChannelAware)) {
+        if (!$payload instanceof StreamChannelAware) {
             return; // Not a stream-aware payload, can't route
         }
 

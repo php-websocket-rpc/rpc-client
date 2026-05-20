@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace PhpWebsocketRpc\RpcClient\Client;
 
 use Amp\Future;
+use Amp\Websocket\Client\WebsocketConnector;
 use PhpWebsocketRpc\Rpc\Exception\RateLimitException;
 use PhpWebsocketRpc\Rpc\Payload\Kind;
 use PhpWebsocketRpc\Rpc\Payload\Payload;
 use PhpWebsocketRpc\Rpc\Stream\StreamSubscribable;
 use PhpWebsocketRpc\RpcClient\Middleware\ClientMiddlewareInterface;
 use PhpWebsocketRpc\RpcClient\Stream\Subscription;
-use Amp\Websocket\Client\WebsocketConnector;
 
 /**
  * RPC client wrapper that automatically retries on rate limit errors.
@@ -52,10 +52,7 @@ final class RetryableRpcClient
         ?RetryStrategy $strategy = null,
         ?WebsocketConnector $connector = null,
     ): self {
-        return new self(
-            RpcClient::connect($uri, $connector),
-            $strategy ?? new RetryStrategy(),
-        );
+        return new self(RpcClient::connect($uri, $connector), $strategy ?? new RetryStrategy());
     }
 
     /**
