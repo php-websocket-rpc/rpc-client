@@ -2,6 +2,13 @@
     "name": "php-websocket-rpc/rpc-client",
     "description": "Async RPC client over WebSocket using amphp and msgpack",
     "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Prasetyo Wicaksono",
+            "email": "pras@tuta.io"
+        }
+    ],
     "require": {
         "php": ">=8.5",
         "ext-msgpack": "*",
