@@ -52,6 +52,8 @@ final class RpcClient
     }
 
     /**
+     * @internal Used by ContractProxyFactory. Prefer createProxy() instead.
+     *
      * @param Kind\RpcRequest&Payload $payload
      * @param float|null              $timeout  Optional timeout in seconds.
      *                                          When exceeded, throws ClientException(Error::TIMEOUT).
@@ -97,12 +99,17 @@ final class RpcClient
         return $future;
     }
 
+    /**
+     * @internal Used by ContractProxyFactory. Prefer createProxy() instead.
+     */
     public function notify(Kind\Notification&Payload $payload): void
     {
         $this->sendPayload($payload);
     }
 
     /**
+     * @internal Used by ContractProxyFactory. Prefer createProxy() instead.
+     *
      * @template T of Payload
      * @param Kind\StreamOpen&StreamSubscribable&T $payload
      *
@@ -129,6 +136,8 @@ final class RpcClient
     }
 
     /**
+     * @internal Used by ContractProxyFactory. Prefer createProxy() instead.
+     *
      * @param Kind\StreamData&Payload $payload
      */
     public function publish(Kind\StreamData&Payload $payload): void
