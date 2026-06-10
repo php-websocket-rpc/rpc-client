@@ -16,11 +16,12 @@ use PhpWebsocketRpc\Rpc\Payload\Payload;
 use PhpWebsocketRpc\Rpc\Payload\RpcResponse;
 use PhpWebsocketRpc\Rpc\Payload\StreamClose;
 use PhpWebsocketRpc\Rpc\Stream\StreamSubscribable;
-
+use PhpWebsocketRpc\Rpc\Transport\Amp\Client;
+use PhpWebsocketRpc\Rpc\Transport\FramedConnection;
 use PhpWebsocketRpc\RpcClient\Middleware\ClientMiddlewareInterface;
 use PhpWebsocketRpc\RpcClient\Stream\Subscription;
-use PhpWebsocketRpc\Rpc\Transport\FramedConnection;
 
+use function Amp\async;
 use function Amp\Websocket\Client\connect as wsConnect;
 
 final class RpcClient
@@ -43,7 +44,7 @@ final class RpcClient
     public static function connect(string $uri, ?WebsocketConnector $connector = null): self
     {
         $ws = $connector ? $connector->connect(new WebsocketHandshake($uri)) : wsConnect($uri);
-        $connection = new FramedConnection($ws);
+        $connection = new FramedConnection(new Client($ws));
 
         $client = new self($connection);
         $client->startReceiveLoop();
@@ -82,7 +83,7 @@ final class RpcClient
             $requestId = $payload->id;
             $cancellation = new TimeoutCancellation($timeout);
 
-            return \Amp\async(function () use ($future, $timeout, $cancellation, $requestId): Payload {
+            return async(function () use ($future, $timeout, $cancellation, $requestId): Payload {
                 try {
                     return $future->await($cancellation);
                 } catch (\Amp\TimeoutException) {
@@ -147,7 +148,7 @@ final class RpcClient
 
     public function use(ClientMiddlewareInterface $middleware): void
     {
-        $this->middlewarePipeline->use(static function (Payload $payload, callable $next) use ($middleware): \Amp\Future {
+        $this->middlewarePipeline->use(static function (Payload $payload, callable $next) use ($middleware): Future {
             return $middleware->handle($payload, $next);
         });
     }
@@ -173,17 +174,6 @@ final class RpcClient
     }
 
     /**
-     * Create a dynamic RPC proxy from a service interface.
-     *
-     * The proxy intercepts all method calls and transparently performs
-     * RPC operations via the contract system.
-     *
-     * Supported patterns:
-     *   - call/response  (return type != void/Iterator)
-     *   - notification   (return type = void, no callable param)
-     *   - streaming      (return type = Iterator/Generator/Traversable/iterable)
-     *   - subscription   (single callable param, void return)
-     *
      * @template T of object
      * @param class-string<T> $interface
      *
@@ -200,7 +190,7 @@ final class RpcClient
 
     private function startReceiveLoop(): void
     {
-        \Amp\async(function (): void {
+        async(function (): void {
             try {
                 foreach ($this->connection->receiveStream() as $payload) {
                     $this->dispatchIncoming($payload);
@@ -277,7 +267,7 @@ final class RpcClient
             return;
         }
 
-        $this->middlewarePipeline->execute($payload, function (Payload $payload): \Amp\Future {
+        $this->middlewarePipeline->execute($payload, function (Payload $payload): Future {
             $this->sendPayload($payload);
             return new DeferredFuture()->getFuture();
         });

@@ -152,15 +152,17 @@ final class ContractProxyFactory
 
                 \Amp\async(static function () use ($subscription, $userCallback, $callableArgType): void {
                     foreach ($subscription as $streamValue) {
-                        if (!($streamValue instanceof ContractStreamValue)) { continue; }
+                        if (!$streamValue instanceof ContractStreamValue) {
+                            continue;
+                        }
 
-$decoded = $streamValue->value;
+                        $decoded = $streamValue->value;
 
-                            if ($callableArgType !== null && \is_array($decoded)) {
-                                $decoded = ContractSerializer::decode($decoded, $callableArgType);
-                            }
+                        if ($callableArgType !== null && \is_array($decoded)) {
+                            $decoded = ContractSerializer::decode($decoded, $callableArgType);
+                        }
 
-                            $userCallback($decoded);
+                        $userCallback($decoded);
                     }
                 });
             };
@@ -194,15 +196,17 @@ $decoded = $streamValue->value;
 
                 return (static function () use ($subscription, $innerType): \Generator {
                     foreach ($subscription as $streamValue) {
-                        if (!($streamValue instanceof ContractStreamValue)) { continue; }
+                        if (!$streamValue instanceof ContractStreamValue) {
+                            continue;
+                        }
 
-$decoded = $streamValue->value;
+                        $decoded = $streamValue->value;
 
-                            if ($innerType !== null && \is_array($decoded)) {
-                                $decoded = ContractSerializer::decode($decoded, $innerType);
-                            }
+                        if ($innerType !== null && \is_array($decoded)) {
+                            $decoded = ContractSerializer::decode($decoded, $innerType);
+                        }
 
-                            yield $decoded;
+                        yield $decoded;
                     }
                 })();
             };

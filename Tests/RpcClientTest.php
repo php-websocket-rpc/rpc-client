@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace PhpWebsocketRpc\RpcClient\Tests;
 
 use PHPUnit\Framework\TestCase;
-
-
 use PhpWebsocketRpc\RpcClient\Client\ClientException;
 
 class RpcClientTest extends TestCase
